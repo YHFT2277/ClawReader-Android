@@ -60,6 +60,21 @@
     </div>
 
     <div class="toolbar-right">
+      <!-- 字体大小 -->
+      <button v-if="hasFile" class="btn btn-icon" @click="changeFontSize(-1)" title="缩小字体" :disabled="fontSize <= 10">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+        </svg>
+      </button>
+      <span v-if="hasFile" class="font-size-label" :title="'字体大小: ' + fontSize + 'px'">{{ fontSize }}</span>
+      <button v-if="hasFile" class="btn btn-icon" @click="changeFontSize(1)" title="放大字体" :disabled="fontSize >= 24">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/>
+          <line x1="12" y1="4" x2="12" y2="20"/>
+        </svg>
+      </button>
+
       <!-- 搜索按钮 -->
       <button v-if="hasFile && !searchActive" class="btn btn-icon" @click="openSearch" title="搜索文档 (Ctrl+F)">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -113,6 +128,26 @@
         </svg>
         <span>AI 助手</span>
       </button>
+
+      <!-- 导出按钮 -->
+      <div class="export-selector" v-if="hasFile">
+        <button class="btn btn-icon" @click="showExportMenu = !showExportMenu" title="导出文档">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </button>
+        <div v-if="showExportMenu" class="export-menu">
+          <div class="export-menu-header">导出格式</div>
+          <div class="export-item" @click="doExport('txt')">
+            <span>📄</span> 纯文本 (.txt)
+          </div>
+          <div class="export-item" @click="doExport('md')">
+            <span>📝</span> Markdown (.md)
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 反馈弹窗 -->
@@ -142,12 +177,13 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, computed } from 'vue';
+import { ref, watch, nextTick, computed, onMounted, onUnmounted } from 'vue';
 
 const emit = defineEmits([
   'openFile', 'togglePanel', 'changeTheme',
   'search', 'search-nav', 'search-close',
-  'open-history', 'changeModel',
+  'open-history', 'changeModel', 'changeFontSize',
+  'exportFile',
 ]);
 
 const props = defineProps({
@@ -161,6 +197,7 @@ const props = defineProps({
   searchIdx: { type: Number, default: 0 },
   modelList: { type: Array, default: () => [] },
   currentModel: { type: String, default: '' },
+  fontSize: { type: Number, default: 14 },
 });
 
 // Local search state
@@ -210,10 +247,11 @@ function selectModel(modelId) {
   emit('changeModel', modelId);
 }
 
-// 点击外部关闭模型菜单
+// 点击外部关闭模型菜单和导出菜单
 function onDocClick(e) {
-  if (!e.target.closest('.model-selector')) {
+  if (!e.target.closest('.model-selector') && !e.target.closest('.export-selector')) {
     showModelMenu.value = false;
+    showExportMenu.value = false;
   }
 }
 onMounted(() => {
@@ -223,6 +261,18 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', onDocClick);
 });
+
+// 字体大小调节
+function changeFontSize(delta) {
+  emit('changeFontSize', delta);
+}
+
+// 导出
+const showExportMenu = ref(false);
+function doExport(format) {
+  showExportMenu.value = false;
+  emit('exportFile', format);
+}
 
 // 反馈相关状态
 const showFeedback = ref(false);
@@ -378,6 +428,15 @@ async function submitFeedback() {
   min-width: 32px;
   min-height: 32px;
   justify-content: center;
+}
+
+.font-size-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+  user-select: none;
 }
 
 .file-name {
@@ -590,5 +649,43 @@ async function submitFeedback() {
   padding: 1px 5px;
   border-radius: 4px;
   font-weight: 600;
+}
+
+/* Export Selector */
+.export-selector {
+  position: relative;
+}
+.export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  padding: 8px;
+  min-width: 160px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  z-index: 100;
+}
+.export-menu-header {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 8px 8px;
+  border-bottom: 1px solid var(--border-default);
+  margin-bottom: 4px;
+}
+.export-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+.export-item:hover {
+  background: var(--color-accent-bg);
 }
 </style>

@@ -60,9 +60,12 @@ function findElectronPath() {
 
 function launchElectron() {
   var electronPath = findElectronPath();
+  // quote paths with spaces to avoid shell splitting
+  var quotedPath = electronPath.includes(' ') ? '"' + electronPath + '"' : electronPath;
+  var quotedRoot = projectRoot.includes(' ') ? '"' + projectRoot + '"' : projectRoot;
   console.log('🚀 Launching Electron from: ' + electronPath);
 
-  var child = spawn(electronPath, [projectRoot, '--dev'], {
+  var child = spawn(quotedPath, [quotedRoot, '--dev'], {
     stdio: 'inherit',
     shell: true,
     env: Object.assign({}, process.env, { ELECTRON_IS_DEV: '1' })

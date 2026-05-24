@@ -1,5 +1,5 @@
 <template>
-  <div class="doc-viewer" ref="viewerRef">
+  <div class="doc-viewer" ref="viewerRef" @scroll="onScroll">
     <div v-if="!content" class="empty-state">
       <div class="empty-icon">📄</div>
       <p>点击「打开文件」选择文档</p>
@@ -8,9 +8,21 @@
         Word (.docx)、Excel (.xlsx)、PPT (.pptx)<br/>
         选中文本后可使用 AI 翻译、出题等功能
       </p>
+
+      <!-- 收藏列表 -->
+      <div v-if="favoriteList.length" class="history-section">
+        <p class="history-title">⭐ 收藏</p>
+        <div v-for="f in favoriteList" :key="'fav-' + f.path" class="history-item" @click="$emit('open-history', f.path)">
+          <span class="history-star">⭐</span>
+          <span class="history-name">{{ f.name }}</span>
+          <span class="history-time">{{ f.timeLabel }}</span>
+        </div>
+      </div>
+
+      <!-- 最近打开 -->
       <div v-if="fileHistory.length" class="history-section">
         <p class="history-title">📂 最近打开</p>
-        <div v-for="f in fileHistory" :key="f.path" class="history-item" @click="$emit('open-history', f.path)">
+        <div v-for="f in fileHistory" :key="'hist-' + f.path" class="history-item" @click="$emit('open-history', f.path)">
           <span class="history-name">{{ f.name }}</span>
           <span class="history-time">{{ f.timeLabel }}</span>
         </div>
@@ -18,32 +30,90 @@
     </div>
     <div v-else class="doc-content" @mouseup="handleTextSelection">
       <div class="doc-header">
-        <span class="doc-title">{{ fileName || '未命名文档' }}</span>
+        <span class="doc-title" @click="toggleFavInIcon" :title="isFav ? '取消收藏' : '添加到收藏'">
+          <span class="fav-icon" :class="{ active: isFav }">{{ isFav ? '⭐' : '☆' }}</span>
+          {{ fileName || '未命名文档' }}
+        </span>
         <span class="doc-stats">{{ content.length }} 字符 | {{ lineCount }} 行</span>
       </div>
-      <pre class="doc-body"><code v-html="displayContent" ref="codeRef"></code></pre>
+      <pre class="doc-body" :style="{ fontSize: fontSize + 'px' }"><code v-html="displayContent" ref="codeRef"></code></pre>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
-import { getFileHistory, formatHistoryTime } from '../utils/fileHistory.js';
+import { getFileHistory, getFavorites, toggleFavorite, isFavorite, getReadingProgress, saveReadingProgress, formatHistoryTime } from '../utils/fileHistory.js';
 
 const props = defineProps({
   content: { type: String, default: '' },
   fileName: { type: String, default: '' },
+  filePath: { type: String, default: '' },
   searchQuery: { type: String, default: '' },
   searchActive: { type: Boolean, default: false },
+  fontSize: { type: Number, default: 14 },
 });
-const emit = defineEmits(['text-selected', 'open-history']);
+const emit = defineEmits(['text-selected', 'open-history', 'toggle-fav']);
 
 const viewerRef = ref(null);
 const codeRef = ref(null);
 const searchMatchCount = ref(0);
 const currentMatchIndex = ref(0);
+const isFav = ref(false);
 
 const fileHistory = ref(getFileHistory().map(f => ({ ...f, timeLabel: formatHistoryTime(f.time) })).slice(0, 8));
+
+// 刷新历史和收藏列表
+function refreshLists() {
+  fileHistory.value = getFileHistory().map(f => ({ ...f, timeLabel: formatHistoryTime(f.time) })).slice(0, 8);
+  favoriteList.value = getFavorites().map(f => ({ ...f, timeLabel: formatHistoryTime(f.time) })).slice(0, 10);
+}
+
+const favoriteList = ref(getFavorites().map(f => ({ ...f, timeLabel: formatHistoryTime(f.time) })).slice(0, 10));
+
+// 监听 filePath 变化，检查收藏状态
+watch(() => props.filePath, (p) => {
+  isFav.value = p ? isFavorite(p) : false;
+  // 恢复阅读进度
+  if (p && props.content) {
+    nextTick(() => restoreProgress(p));
+  }
+});
+
+// 恢复阅读进度
+function restoreProgress(path) {
+  const p = getReadingProgress(path);
+  if (p && viewerRef.value) {
+    const ratio = p.totalHeight > 0 ? p.scrollTop / p.totalHeight : 0;
+    const target = ratio * viewerRef.value.scrollHeight;
+    viewerRef.value.scrollTo({ top: target, behavior: 'instant' });
+  }
+}
+
+// 保存阅读进度（防抖）
+let scrollTimer = null;
+function onScroll() {
+  if (!props.filePath || !viewerRef.value) return;
+  if (scrollTimer) clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => {
+    saveReadingProgress(
+      props.filePath,
+      viewerRef.value.scrollTop,
+      viewerRef.value.scrollHeight
+    );
+  }, 500);
+}
+
+// 收藏切换
+function toggleFavInIcon() {
+  if (!props.filePath) return;
+  const favd = toggleFavorite({ name: props.fileName, path: props.filePath });
+  isFav.value = favd;
+  refreshLists();
+}
+
+// 暴露给父组件
+defineExpose({ navigateSearch, searchMatchCount });
 
 const lineCount = computed(() => {
   if (!props.content) return 0;
@@ -69,34 +139,16 @@ const displayContent = computed(() => {
   const query = props.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp(`(${query})`, 'gi');
   searchMatchCount.value = (escaped.match(regex) || []).length;
-  return escaped.replace(regex, (m, idx) => {
-    const globalIdx = countVisibleBefore(m, escaped, idx);
-    return `<mark class="search-highlight" data-idx="${globalIdx}">${m}</mark>`;
-  });
+  return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
 });
-
-function countVisibleBefore(match, full, matchIdx) {
-  // 简单计数：顺序 match 的 index
-  const query = props.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(query, 'gi');
-  let count = 0;
-  let m;
-  while ((m = regex.exec(full)) !== null) {
-    if (m.index >= matchIdx) break;
-    count++;
-  }
-  return count;
-}
 
 // 导航到指定匹配项
 function navigateSearch(direction) {
   const marks = codeRef.value?.querySelectorAll('.search-highlight');
   if (!marks || marks.length === 0) return;
 
-  // 移除当前激活
   marks.forEach(m => m.classList.remove('active'));
 
-  // 计算目标索引
   if (direction === 'next') {
     currentMatchIndex.value = (currentMatchIndex.value + 1) % marks.length;
   } else if (direction === 'prev') {
@@ -124,8 +176,6 @@ function handleTextSelection() {
     emit('text-selected', text);
   }
 }
-
-defineExpose({ navigateSearch, searchMatchCount });
 </script>
 
 <style scoped>
@@ -158,11 +208,11 @@ defineExpose({ navigateSearch, searchMatchCount });
   line-height: 1.6;
 }
 
-/* History section */
+/* History & Favorites sections */
 .history-section {
   margin-top: 24px;
   width: 100%;
-  max-width: 320px;
+  max-width: 360px;
 }
 .history-title {
   font-size: 13px;
@@ -180,9 +230,14 @@ defineExpose({ navigateSearch, searchMatchCount });
   cursor: pointer;
   transition: background 0.15s;
   text-align: left;
+  gap: 8px;
 }
 .history-item:hover {
   background: var(--color-accent-bg);
+}
+.history-star {
+  font-size: 13px;
+  flex-shrink: 0;
 }
 .history-name {
   font-size: 13px;
@@ -190,7 +245,7 @@ defineExpose({ navigateSearch, searchMatchCount });
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 200px;
+  flex: 1;
 }
 .history-time {
   font-size: 11px;
@@ -218,6 +273,23 @@ defineExpose({ navigateSearch, searchMatchCount });
   font-weight: 600;
   color: var(--color-accent);
   font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.fav-icon {
+  font-size: 16px;
+  transition: transform 0.2s;
+  opacity: 0.5;
+}
+.fav-icon.active {
+  opacity: 1;
+}
+.fav-icon:hover {
+  transform: scale(1.2);
+  opacity: 1;
 }
 .doc-stats {
   font-size: 11px;
@@ -228,7 +300,6 @@ defineExpose({ navigateSearch, searchMatchCount });
   margin: 0;
   padding: 20px;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 13px;
   line-height: 1.7;
   white-space: pre-wrap;
   word-wrap: break-word;

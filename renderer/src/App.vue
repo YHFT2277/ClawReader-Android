@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <Toolbar
+      <Toolbar
       :file-info="fileInfo"
       :has-file="!!fileContent"
       :panel-open="showPanel"
@@ -11,6 +11,7 @@
       :search-idx="searchCurrentIdx"
       :model-list="modelList"
       :current-model="currentModel"
+      :font-size="fontSize"
       @open-file="openFile"
       @toggle-panel="togglePanel"
       @change-theme="onChangeTheme"
@@ -19,14 +20,18 @@
       @search-nav="onSearchNav"
       @search-close="onSearchClose"
       @open-history="onOpenHistory"
+      @change-font-size="onChangeFontSize"
+      @export-file="onExportFile"
     />
     <div class="main-content">
       <DocViewer
         ref="docViewerRef"
         :content="fileContent"
         :file-name="fileInfo.name"
+        :file-path="fileInfo.path"
         :search-query="searchQuery"
         :search-active="searchActive"
+        :font-size="fontSize"
         @text-selected="onTextSelected"
         @open-history="onOpenHistory"
       />
@@ -84,6 +89,45 @@ function onChangeTheme(theme) {
   currentTheme.value = theme;
   localStorage.setItem('clawreader-theme', theme);
   document.documentElement.setAttribute('data-theme', theme);
+}
+
+// Font size
+const fontSize = ref(Number(localStorage.getItem('clawreader-fontsize')) || 14);
+function onChangeFontSize(delta) {
+  const next = Math.max(10, Math.min(24, fontSize.value + delta));
+  fontSize.value = next;
+  localStorage.setItem('clawreader-fontsize', String(next));
+}
+
+// Export
+async function onExportFile(format) {
+  if (!fileContent.value || !fileInfo.value.name) return;
+  const baseName = fileInfo.value.name.replace(/\.[^.]+$/, '');
+  const ext = format === 'md' ? '.md' : '.txt';
+  const defaultName = baseName + ext;
+
+  let content = fileContent.value;
+  if (format === 'md') {
+    // 添加 Markdown 头信息
+    const now = new Date().toLocaleString('zh-CN');
+    content = `# ${fileInfo.value.name}\n\n> 导出时间：${now}\n> 总字符数：${fileContent.value.length}\n\n---\n\n${fileContent.value}`;
+  }
+
+  const result = await window.electronAPI.saveFile({
+    defaultName,
+    content,
+    filters: [
+      format === 'md'
+        ? { name: 'Markdown', extensions: ['md'] }
+        : { name: 'Text Files', extensions: ['txt'] },
+    ],
+  });
+
+  if (result.success) {
+    console.log('[App] Exported to:', result.path);
+  } else if (!result.canceled) {
+    alert('导出失败：' + (result.error || '未知错误'));
+  }
 }
 
 // Model

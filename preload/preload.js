@@ -12,4 +12,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getCurrentModel: () => ipcRenderer.invoke('ai:getCurrentModel'),
   setModel: (modelId) => ipcRenderer.invoke('ai:setModel', modelId),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+  saveFile: (options) => ipcRenderer.invoke('file:save', options),
 });

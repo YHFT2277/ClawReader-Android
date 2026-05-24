@@ -88,6 +88,20 @@ ipcMain.handle('file:getInfo', async (event, filePath) => {
   }
 });
 
+ipcMain.handle('file:save', async (event, { defaultName, content, filters }) => {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: defaultName,
+    filters: filters || [{ name: 'Text Files', extensions: ['txt'] }],
+  });
+  if (result.canceled) return { success: false, canceled: true };
+  try {
+    fs.writeFileSync(result.filePath, content, 'utf-8');
+    return { success: true, path: result.filePath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
 // ---------- AI Handlers ----------
 
 let currentModel = AI_CONFIG.model;

@@ -1,9 +1,13 @@
 /**
  * 文件历史记录管理器
  * 存储最近打开的文件列表，最多 20 条
+ * 同时管理收藏和阅读进度
  */
 const STORAGE_KEY = 'clawreader-file-history';
+const FAVORITES_KEY = 'clawreader-favorites';
+const PROGRESS_KEY = 'clawreader-progress';
 const MAX_ENTRIES = 20;
+const MAX_FAVORITES = 50;
 
 /**
  * 获取文件历史列表
@@ -38,6 +42,59 @@ export function addFileHistory(file) {
  */
 export function clearFileHistory() {
   localStorage.removeItem(STORAGE_KEY);
+}
+
+/**
+ * 收藏管理
+ */
+
+export function getFavorites() {
+  try {
+    return JSON.parse(localStorage.getItem(FAVORITES_KEY)) || [];
+  } catch { return []; }
+}
+
+export function isFavorite(path) {
+  return getFavorites().some(f => f.path === path);
+}
+
+export function toggleFavorite(file) {
+  const list = getFavorites();
+  const idx = list.findIndex(f => f.path === file.path);
+  if (idx >= 0) {
+    list.splice(idx, 1);
+  } else {
+    list.unshift({ name: file.name, path: file.path, time: Date.now() });
+    if (list.length > MAX_FAVORITES) list.length = MAX_FAVORITES;
+  }
+  localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+  return idx < 0; // true = 已收藏, false = 已取消
+}
+
+/**
+ * 阅读进度管理（按文件路径存储 scrollTop 和 totalHeight）
+ */
+
+export function getReadingProgress(path) {
+  try {
+    const all = JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
+    return all[path] || null;
+  } catch { return null; }
+}
+
+export function saveReadingProgress(path, scrollTop, totalHeight) {
+  if (!path) return;
+  try {
+    const all = JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
+    all[path] = { scrollTop, totalHeight, time: Date.now() };
+    // 只保留最近 100 个文件的进度
+    const keys = Object.keys(all);
+    if (keys.length > 100) {
+      const sorted = keys.sort((a, b) => all[b].time - all[a].time);
+      for (const k of sorted.slice(100)) delete all[k];
+    }
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+  } catch {}
 }
 
 /**
