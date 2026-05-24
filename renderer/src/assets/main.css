@@ -1,0 +1,198 @@
+/* ========================================
+   ClawReader - Global Styles & Theme System
+   ======================================== */
+
+/* === Shared Variables (not theme-dependent) === */
+:root {
+  --color-success: #4caf50;
+  --color-warning: #ff9800;
+  --color-error: #f44336;
+  --color-info: #2196f3;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 0.15s;
+  --duration-normal: 0.3s;
+}
+
+/* === Dark Theme (default) === */
+:root, [data-theme="dark"] {
+  --color-accent: #6c63ff;
+  --color-accent-hover: #5a52e0;
+  --color-accent-bg: rgba(108, 99, 255, 0.12);
+  --bg-root: #0f0f23;
+  --bg-surface: #1a1a2e;
+  --bg-surface-2: #16213e;
+  --bg-elevated: #1e1e3e;
+  --bg-input: #16162e;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+  --text-primary: #e0e0f0;
+  --text-secondary: #a0a0c8;
+  --text-muted: #5a5a7a;
+  --text-on-primary: #ffffff;
+  --border-default: #2a2a4a;
+  --border-strong: #3a3a6a;
+  --chat-bg-assistant: #1a1a3a;
+  --chat-bg-user: #6c63ff;
+  --toolbar-bg: #16213e;
+  --docview-bg: #0f0f23;
+  --docview-text: #d0d0e8;
+}
+
+/* === Light Theme === */
+[data-theme="light"] {
+  --color-accent: #5b4fcf;
+  --color-accent-hover: #4a3fb8;
+  --color-accent-bg: rgba(91, 79, 207, 0.08);
+  --bg-root: #f8f9fe;
+  --bg-surface: #ffffff;
+  --bg-surface-2: #f0f1f6;
+  --bg-elevated: #ffffff;
+  --bg-input: #f0f1f6;
+  --bg-overlay: rgba(0, 0, 0, 0.3);
+  --text-primary: #1a1a2e;
+  --text-secondary: #555577;
+  --text-muted: #8888aa;
+  --text-on-primary: #ffffff;
+  --border-default: #e2e4f0;
+  --border-strong: #cccee0;
+  --chat-bg-assistant: #f0f1f8;
+  --chat-bg-user: #5b4fcf;
+  --toolbar-bg: #f0f1f6;
+  --docview-bg: #ffffff;
+  --docview-text: #1a1a2e;
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-root);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Scrollbar - Webkit (Electron Chromium) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* Scrollbar - Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+/* Selection */
+::selection {
+  background: var(--color-primary);
+  color: var(--text-on-primary);
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Buttons base reset */
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+/* Input base */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--duration-normal) var(--ease-default);
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform var(--duration-normal) var(--ease-default),
+    opacity var(--duration-normal) var(--ease-default);
+}
+.slide-left-enter-from {
+  transform: translateX(20px);
+  opacity: 0;
+}
+.slide-left-leave-to {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
+/* Utility: screen-reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Utility: no-select */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}

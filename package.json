@@ -1,0 +1,63 @@
+{
+  "name": "claw-reader-android",
+  "version": "1.0.0",
+  "description": "ClawReader Android - AI-powered Text & Code Reader",
+  "main": "main/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite --config vite.config.js",
+    "dev:electron": "node scripts/wait-vite.js",
+    "build": "vite build --config vite.config.js",
+    "build:win": "vite build --config vite.config.js && electron-builder --win",
+    "build:android": "vite build --config vite.config.js && npx cap sync",
+    "postinstall": "node scripts/fix-electron.js"
+  },
+  "build": {
+    "appId": "com.claw.reader",
+    "productName": "ClawReader",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main/**/*",
+      "preload/**/*",
+      "dist-renderer/**/*",
+      "resources/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "resources/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-${version}-setup.${ext}"
+    }
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.6.5",
+    "@capacitor/core": "^7.6.5",
+    "electron-log": "^5.3.3",
+    "jszip": "^3.10.1",
+    "mammoth": "^1.12.0",
+    "pptx-parser": "^1.1.7-beta.9",
+    "vue": "^3.5.13",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.6.5",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "concurrently": "^9.2.1",
+    "electron": "^34.5.8",
+    "electron-builder": "^25.1.8",
+    "vite": "^6.2.0"
+  }
+}

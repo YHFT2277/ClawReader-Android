@@ -1,0 +1,11 @@
+{
+  "apiKey": "sk-8a1eec7d671c445b99cb139fc797a8a7",
+  "baseUrl": "https://api.deepseek.com/chat/completions",
+  "model": "deepseek-v4-flash",
+  "timeoutMs": 30000,
+  "models": [
+    { "id": "deepseek-v4-flash", "name": "V4 Flash", "desc": "速度快、便宜，日常首选", "cost": "低" },
+    { "id": "deepseek-v4-flash-thinking", "name": "V4 Flash (思考)", "desc": "带推理过程，适合复杂问题", "cost": "中" },
+    { "id": "deepseek-v4-pro", "name": "V4 Pro", "desc": "最强模型，5/31后降价75%", "cost": "高" }
+  ]
+}
