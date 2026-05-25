@@ -323,6 +323,8 @@ function openPanel() {
   height: 100vh;
   overflow: hidden;
   background: var(--bg-root);
+  padding-top: calc(56px + env(safe-area-inset-top));
+  padding-bottom: calc(56px + env(safe-area-inset-bottom));
 }
 
 .main-content {
