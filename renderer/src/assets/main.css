@@ -42,6 +42,7 @@
   --toolbar-bg: #16213e;
   --docview-bg: #0f0f23;
   --docview-text: #d0d0e8;
+  --separator: #2a2a4a;
 }
 
 /* === Light Theme === */
@@ -66,6 +67,7 @@
   --toolbar-bg: #f0f1f6;
   --docview-bg: #ffffff;
   --docview-text: #1a1a2e;
+  --separator: #e2e4f0;
 }
 
 /* Reset */

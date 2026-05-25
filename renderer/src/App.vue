@@ -24,7 +24,21 @@
       @export-file="onExportFile"
     />
     <div class="main-content">
+      <!-- Welcome: no file open yet -->
+      <div v-if="!fileContent && !loading" class="welcome-screen">
+        <div class="welcome-content">
+          <div class="welcome-icon">📖</div>
+          <h2>ClawReader</h2>
+          <p class="welcome-sub">智能文档阅读器</p>
+          <p class="welcome-hint">支持 TXT、Markdown、Word、Excel、PPT</p>
+          <button class="welcome-btn" @click="openFile">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+            打开文件
+          </button>
+        </div>
+      </div>
       <DocViewer
+        v-if="fileContent"
         ref="docViewerRef"
         :content="fileContent"
         :file-name="fileInfo.name"
@@ -316,6 +330,40 @@ function openPanel() {
 .floating-ai-btn:active {
   transform: scale(0.95);
 }
+
+/* Welcome screen */
+.welcome-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.welcome-content {
+  text-align: center;
+  max-width: 300px;
+}
+.welcome-icon { font-size: 64px; margin-bottom: 16px; }
+.welcome-content h2 {
+  font-size: 28px; font-weight: 700;
+  color: var(--text-primary); margin-bottom: 8px;
+}
+.welcome-sub {
+  font-size: 14px; color: var(--text-secondary); margin-bottom: 4px;
+}
+.welcome-hint {
+  font-size: 12px; color: var(--text-muted); margin-bottom: 24px;
+}
+.welcome-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 32px;
+  background: var(--color-accent);
+  color: #fff; border: none; border-radius: 12px;
+  font-size: 16px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s;
+  box-shadow: 0 4px 16px rgba(108, 99, 255, 0.4);
+}
+.welcome-btn:active { background: var(--color-accent-hover); transform: scale(0.97); }
 
 .app-container {
   display: flex;
