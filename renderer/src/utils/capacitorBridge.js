@@ -31,7 +31,7 @@ export function initCapacitorBridge() {
     el = document.createElement('input');
     el.type = 'file';
     el.id = '__cr_file_input__';
-    el.accept = '.txt,.md,.json,.js,.ts,.vue,.html,.css,.py,.java,.c,.cpp,.h,.go,.rs,.php,.rb,.sh,.yaml,.yml,.xml,.sql,.log,.docx,.xlsx,.pptx';
+    el.accept = '.txt,.md,.json,.js,.ts,.vue,.html,.css,.py,.java,.c,.cpp,.h,.go,.rs,.php,.rb,.sh,.yaml,.yml,.xml,.sql,.log,.docx,.xlsx,.pptx,.pdf';
     // 不用 display:none（某些 WebView 会拦截），用透明+定位移出视口
     el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;pointer-events:auto;';
     el.addEventListener('change', () => {

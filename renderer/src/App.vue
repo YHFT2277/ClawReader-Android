@@ -326,8 +326,30 @@ async function handleSharedFile(e) {
   const detail = e?.detail || window.__clawShared__ || {};
   const name = detail.name || detail.fileName || '';
   if (!name) return;
-  console.log('[App] Loading shared file via intent:', name);
-  await loadFile(name);
+  console.log('[App] Shared file from intent:', name);
+
+  // Try standard loadFile path first
+  try {
+    await loadFile(name);
+  } catch (err) {
+    console.error('[App] loadFile failed for shared file, trying direct load:', err);
+    // Fallback: load directly from the File object stored by capacitorBridge
+    loading.value = true;
+    try {
+      const result = await window.electronAPI.readFile(name);
+      if (!result.success) throw new Error(result.error);
+
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      const text = decoder.decode(result.data);
+      fileContent.value = text;
+      fileInfo.value = { name, path: name, size: result.data.byteLength };
+      addFileHistory({ name, path: name, size: result.data.byteLength });
+    } catch (e2) {
+      console.error('[App] Direct load also failed:', e2);
+    }
+    loading.value = false;
+  }
+
   window.__clawShared__ = null;
 }
 </script>

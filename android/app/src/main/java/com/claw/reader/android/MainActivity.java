@@ -27,16 +27,31 @@ public class MainActivity extends BridgeActivity {
     private void handleShareIntent(Intent intent) {
         if (intent == null) return;
         String action = intent.getAction();
-        if (!Intent.ACTION_SEND.equals(action) && !Intent.ACTION_VIEW.equals(action)) return;
+        if (action == null) return;
+
+        boolean isSend = Intent.ACTION_SEND.equals(action);
+        boolean isSendMultiple = Intent.ACTION_SEND_MULTIPLE.equals(action);
+        boolean isView = Intent.ACTION_VIEW.equals(action);
+        if (!isSend && !isSendMultiple && !isView) return;
+
+        Log.d(TAG, "handleShareIntent: action=" + action + ", type=" + intent.getType());
 
         // Get file URI
         Uri uri = null;
-        if (Intent.ACTION_SEND.equals(action)) {
+        if (isSend) {
             uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        } else if (isSendMultiple) {
+            // For multiple files, take only the first one
+            java.util.ArrayList<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            if (uris != null && !uris.isEmpty()) uri = uris.get(0);
         } else {
             uri = intent.getData();
         }
-        if (uri == null) return;
+        if (uri == null) {
+            Log.w(TAG, "No URI found in intent");
+            return;
+        }
+        Log.d(TAG, "File URI: " + uri.toString() + ", scheme: " + uri.getScheme());
 
         pendingShareIntent = intent;
         Uri finalUri = uri;
@@ -72,14 +87,29 @@ public class MainActivity extends BridgeActivity {
 
     private void processSharedFile(Uri uri, Intent intent) {
         String fileName = resolveFileName(uri, intent);
-        Log.d(TAG, "Processing shared file: " + fileName);
+        Log.d(TAG, "Processing shared file: " + fileName + ", scheme=" + uri.getScheme());
 
         try {
-            // Read file content
+            InputStream in = getContentResolver().openInputStream(uri);
+            
+            // Fallback for file:// URIs
+            if (in == null && "file".equals(uri.getScheme())) {
+                String path = uri.getPath();
+                if (path != null) {
+                    in = new FileInputStream(new java.io.File(path));
+                }
+            }
+            
+            if (in == null) {
+                Log.e(TAG, "Cannot open input stream for URI: " + uri);
+                return;
+            }
+
             String content;
-            try (InputStream in = getContentResolver().openInputStream(uri)) {
-                if (in == null) throw new IOException("Cannot open input stream");
+            try {
                 content = readTextContent(in);
+            } finally {
+                in.close();
             }
 
             // Escape for JS injection
