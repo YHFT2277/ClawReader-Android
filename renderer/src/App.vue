@@ -282,10 +282,16 @@ function onKeyDown(e) {
 
 onMounted(() => {
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('clawreader:fileReady', handleSharedFile);
   loadModels();
+  // If shared file already arrived before mount, load it now
+  if (window.__clawShared__?.name) {
+    handleSharedFile({ detail: window.__clawShared__ });
+  }
 });
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown);
+  window.removeEventListener('clawreader:fileReady', handleSharedFile);
 });
 
 // Events
@@ -300,6 +306,16 @@ function onPanelClose() {
 }
 function openPanel() {
   showPanel.value = true;
+}
+
+// Handle shared file from Android intent (Open With / Share)
+async function handleSharedFile(e) {
+  const detail = e?.detail || window.__clawShared__ || {};
+  const name = detail.name || detail.fileName || '';
+  if (!name) return;
+  console.log('[App] Loading shared file via intent:', name);
+  await loadFile(name);
+  window.__clawShared__ = null;
 }
 </script>
 

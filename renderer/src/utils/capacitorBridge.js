@@ -157,6 +157,21 @@ export function initCapacitorBridge() {
     }
   }
 
+  // ---- 共享文件处理（Android intent / Open With）----
+  window.addEventListener('clawreader:sharedFile', (e) => {
+    const { name, content } = e.detail || {};
+    if (!name || !content) return;
+    console.log('[CapacitorBridge] 收到共享文件:', name, content.length, 'chars');
+
+    // 创建 File 对象模拟用户选择
+    _selectedFile = new File([content], name, { type: 'text/plain' });
+
+    // 通知 App.vue 自动加载
+    window.dispatchEvent(new CustomEvent('clawreader:fileReady', {
+      detail: { fileName: name, content },
+    }));
+  });
+
   // ---- 挂载 window.electronAPI ----
   window.electronAPI = {
 
