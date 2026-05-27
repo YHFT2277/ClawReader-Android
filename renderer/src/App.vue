@@ -2,7 +2,7 @@
   <div class="app-container">
       <Toolbar
       :file-info="fileInfo"
-      :has-file="!!fileContent"
+      :has-file="!!fileContent || !!pdfData"
       :panel-open="showPanel"
       :theme="currentTheme"
       :search-active="searchActive"
@@ -25,16 +25,11 @@
     />
     <div class="main-content">
       <!-- Welcome: no file open yet -->
-      <div v-if="!fileContent && !loading" class="welcome-screen">
+      <div v-if="!fileContent && !pdfData && !loading" class="welcome-screen">
         <div class="welcome-content">
-          <div class="welcome-icon">📖</div>
-          <h2>ClawReader</h2>
-          <p class="welcome-sub">智能文档阅读器</p>
-          <p class="welcome-hint">支持 TXT、Markdown、Word、Excel、PPT</p>
-          <button class="welcome-btn" @click="openFile">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
-            打开文件
-          </button>
+          <h2>📖 ClawReader</h2>
+          <p class="welcome-hint">支持 TXT、Markdown、Word、Excel、PPT、PDF</p>
+          <button class="welcome-btn" @click="openFile">打开文件</button>
         </div>
       </div>
       <DocViewer
@@ -48,6 +43,11 @@
         :font-size="fontSize"
         @text-selected="onTextSelected"
         @open-history="onOpenHistory"
+      />
+      <PdfViewer
+        v-if="pdfData"
+        :pdf-data="pdfData"
+        :file-name="fileInfo.name"
       />
       <transition name="slide">
         <AiPanel
@@ -79,12 +79,14 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import Toolbar from './components/Toolbar.vue';
 import DocViewer from './components/DocViewer.vue';
+import PdfViewer from './components/PdfViewer.vue';
 import AiPanel from './components/AiPanel.vue';
 import { parseDocument, getFileTypeLabel, getFileTypeColor } from './utils/documentParser.js';
 import { addFileHistory } from './utils/fileHistory.js';
 
 // State
 const fileContent = ref('');
+const pdfData = ref(null);
 const fileInfo = ref({ name: '', path: '', size: 0 });
 const selectedText = ref('');
 const showPanel = ref(true);
@@ -175,7 +177,7 @@ async function onChangeModel(modelId) {
 }
 
 // Supported file extensions
-const SUPPORTED_EXTS = ['.txt', '.md', '.markdown', '.json', '.js', '.ts', '.vue', '.html', '.css', '.py', '.java', '.c', '.cpp', '.h', '.go', '.rs', '.php', '.rb', '.sh', '.yaml', '.yml', '.xml', '.sql', '.log', '.docx', '.xlsx', '.pptx'];
+const SUPPORTED_EXTS = ['.txt', '.md', '.markdown', '.json', '.js', '.ts', '.vue', '.html', '.css', '.py', '.java', '.c', '.cpp', '.h', '.go', '.rs', '.php', '.rb', '.sh', '.yaml', '.yml', '.xml', '.sql', '.log', '.docx', '.xlsx', '.pptx', '.pdf'];
 
 // Open file (from picker)
 async function openFile() {
@@ -192,6 +194,7 @@ async function onOpenHistory(filePath) {
 
 // Core: load file by path
 async function loadFile(filePath) {
+  pdfData.value = null; // Reset previous PDF
   const ext = filePath.slice(filePath.lastIndexOf('.')).toLowerCase();
   if (!SUPPORTED_EXTS.includes(ext)) {
     alert('暂不支持该文件格式。支持的格式：' + SUPPORTED_EXTS.join(', '));
@@ -205,6 +208,16 @@ async function loadFile(filePath) {
 
     const info = await window.electronAPI.getFileInfo(filePath);
     fileInfo.value = info;
+
+    // PDF: render directly from ArrayBuffer (no text decoding)
+    if (ext === '.pdf') {
+      fileContent.value = '';
+      pdfData.value = result.data;
+      fileInfo.value = { ...info, docType: 'pdf', docLabel: 'PDF', docColor: '#e74c3c' };
+      addFileHistory({ name: info.name, path: filePath, size: info.size });
+      loading.value = false;
+      return;
+    }
 
     let text = '';
     let docType = 'text';
