@@ -22,29 +22,43 @@ export function initCapacitorBridge() {
 
   // ---- 文件操作 ----
   let _selectedFile = null;
+  let _fileResolve = null;
+
+  // 创建持久化隐藏 file input（只创建一次）
+  function _ensureFileInput() {
+    let el = document.getElementById('__cr_file_input__');
+    if (el) return el;
+    el = document.createElement('input');
+    el.type = 'file';
+    el.id = '__cr_file_input__';
+    el.accept = '.txt,.md,.json,.js,.ts,.vue,.html,.css,.py,.java,.c,.cpp,.h,.go,.rs,.php,.rb,.sh,.yaml,.yml,.xml,.sql,.log,.docx,.xlsx,.pptx';
+    // 不用 display:none（某些 WebView 会拦截），用透明+定位移出视口
+    el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;pointer-events:auto;';
+    el.addEventListener('change', () => {
+      const file = el.files[0];
+      if (file) {
+        _selectedFile = file;
+        if (_fileResolve) { _fileResolve(file.name); _fileResolve = null; }
+      } else {
+        if (_fileResolve) { _fileResolve(null); _fileResolve = null; }
+      }
+    });
+    document.body.appendChild(el);
+    return el;
+  }
 
   async function _pickFile() {
+    const input = _ensureFileInput();
     return new Promise((resolve) => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.txt,.md,.json,.js,.ts,.vue,.html,.css,.py,.java,.c,.cpp,.h,.go,.rs,.php,.rb,.sh,.yaml,.yml,.xml,.sql,.log,.docx,.xlsx,.pptx';
-      input.style.display = 'none';
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          _selectedFile = file;
-          resolve({ name: file.name, path: file.name, size: file.size });
-        } else {
-          resolve(null);
-        }
-        document.body.removeChild(input);
-      };
-      input.oncancel = () => {
-        resolve(null);
-        document.body.removeChild(input);
-      };
-      document.body.appendChild(input);
+      _fileResolve = resolve;
+      // 重置 value 以便同一文件可重复选择
+      input.value = '';
+      // 使用原生 click 触发
       input.click();
+      // 超时保护：30s 无响应视为取消
+      setTimeout(() => {
+        if (_fileResolve === resolve) { resolve(null); _fileResolve = null; }
+      }, 30000);
     });
   }
 
@@ -146,7 +160,7 @@ export function initCapacitorBridge() {
   // ---- 挂载 window.electronAPI ----
   window.electronAPI = {
 
-    // 文件
+    // 文件 — openFile 返回文件名（字符串），与 Electron preload 行为一致
     async openFile() { return _pickFile(); },
     async readFile() { return _readSelectedFile(); },
     async getFileInfo() {
