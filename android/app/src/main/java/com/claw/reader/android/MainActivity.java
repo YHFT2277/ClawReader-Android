@@ -51,7 +51,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         if (pendingShareIntent != null && getBridge() != null && getBridge().getWebView() != null) {
             Intent intent = pendingShareIntent;
