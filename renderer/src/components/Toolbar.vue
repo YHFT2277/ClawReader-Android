@@ -221,6 +221,24 @@ async function submitFeedback() {
 }
 </script>
 
+<style>
+/* ===== 全局定位（无scoping，确保 fixed 生效）==== */
+.nav-bar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 200 !important;
+}
+.toolbar {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 200 !important;
+}
+</style>
+
 <style scoped>
 /* ===== 顶部导航栏（苹果风格） ===== */
 .nav-bar {

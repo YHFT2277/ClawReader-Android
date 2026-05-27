@@ -368,11 +368,9 @@ function openPanel() {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   background: var(--bg-root);
-  padding-top: calc(56px + env(safe-area-inset-top));
-  padding-bottom: calc(56px + env(safe-area-inset-bottom));
 }
 
 .main-content {
