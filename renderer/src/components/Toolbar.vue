@@ -19,20 +19,20 @@
   </div>
 
   <!-- 底部工具栏（苹果风格） -->
-  <div class="toolbar" v-if="hasFile">
+  <div class="toolbar">
     <div class="tb-left">
-      <button class="tb-btn" @click="toggleFavorite" :class="{ active: isFavorite }" title="收藏">
+      <button class="tb-btn" @click="toggleFavorite" :class="{ active: isFavorite }" :disabled="!hasFile" title="收藏">
         <svg v-if="isFavorite" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.2 12 2"/></svg>
         <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.2 12 2"/></svg>
       </button>
     </div>
 
     <div class="tb-center">
-      <button class="tb-btn" @click="changeFontSize(-1)" :disabled="fontSize <= 10" title="缩小字体">A⁻</button>
+      <button class="tb-btn" @click="changeFontSize(-1)" :disabled="fontSize <= 10 || !hasFile" title="缩小字体">A⁻</button>
       <span class="tb-font-label">{{ fontSize }}</span>
-      <button class="tb-btn" @click="changeFontSize(1)" :disabled="fontSize >= 24" title="放大字体">A⁺</button>
+      <button class="tb-btn" @click="changeFontSize(1)" :disabled="fontSize >= 24 || !hasFile" title="放大字体">A⁺</button>
       <div class="tb-divider"></div>
-      <button class="tb-btn" @click="openSearch" title="搜索">🔍</button>
+      <button class="tb-btn" @click="openSearch" :disabled="!hasFile" title="搜索">🔍</button>
       <button class="tb-btn ai-btn" @click="$emit('togglePanel')" :class="{ active: panelOpen }" title="AI 助手">✨</button>
     </div>
 

@@ -402,6 +402,18 @@ watch(() => props.selectedText, (text) => {
   font-size: 13px;
 }
 
+/* Mobile: full-screen overlay */
+@media (max-width: 768px) {
+  .ai-panel {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    min-width: auto;
+    z-index: 300;
+    border-left: none;
+  }
+}
+
 /* Header */
 .panel-header {
   display: flex;
