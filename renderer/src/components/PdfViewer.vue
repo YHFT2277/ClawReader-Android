@@ -28,9 +28,8 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
-
-// Disable worker — render on main thread (avoids Vite worker path issues)
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+// Note: GlobalWorkerOptions.workerSrc defaults to '' (main-thread rendering)
+// Do NOT set it — Object.freeze() in pdfjs-dist v4 would throw TypeError
 
 const props = defineProps({
   pdfData: { type: ArrayBuffer, default: null },
